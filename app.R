@@ -1,26 +1,3 @@
-# # leaflet from https://rstudio.github.io/leaflet/json.html
-# ### Gets file From http://leafletjs.com/examples/choropleth/us-states.js
-
-# install.packages("readr")
-# install.packages("tidyverse")
-# install.packages("dplyr")
-# install.packages("shiny")
-# install.packages("shinydashboard")
-# install.packages("shinydashboardPlus") 
-# install.packages("bs4Dash")
-# install.packages("leaflet")
-# install.packages("DT")
-# install.packages("plotly")
-# install.packages("ggplot2")
-# install.packages("ggthemes")
-# install.packages("leaflet")
-# install.packages("geojsonio")
-# install.packages("tidyjson")
-# install.packages("wordcloud")
-# install.packages("RColorBrewer")
-# install.packages("wordcloud2)
-# install.packages("tm")
-
 
 library(readr)
 library(tidyverse)
@@ -41,8 +18,16 @@ library(wordcloud)
 library(wordcloud2)
 library(RColorBrewer)
 library(tm)
+library(tidyverse) #For reading the file from a txt file and for the %>% operator
+library(tidyr)
 
 
+
+
+nhe <- read_csv("NHE.csv")
+str(nhe)
+nhe$Medicare <- as.numeric(nhe$Medicare)
+nhe$Medicaid <- as.numeric(nhe$Medicaid)
 ######### ISAAC
 insurance <- read_csv("insurance.csv")
 gender <- insurance %>% distinct(sex) %>% pull(sex)
@@ -64,137 +49,133 @@ age_list = c("18-40", "41-64")
 ############ END of ISAAC
 
 Color = c("YlOrRd", "Greens", "Blues")
-mapd <- read_csv("md_all.csv")  
+Year = c("19", "18", "17")
+mapd <- read_csv("md_all.csv")
+
 ### Gets file From http://leafletjs.com/examples/choropleth/us-states.js
 states <- geojsonio::geojson_read("https://rstudio.github.io/leaflet/json/us-states.geojson", what = "sp")
 ### remove puerto rico because CMS data does not have it
 states <- states[-52,]  
 
-
 ui <- dashboardPage(
-    dashboardHeader(title = "Healthcare Costs"),
-    dashboardSidebar(
-        minified = TRUE,
-        collapsed = F,
-        sidebarMenu(
-            menuItem("Home", tabName = "page1_Home", icon = icon("info")),
-            menuItem("Cost by Demographics", tabName = "page2", icon = icon("area-chart")),
-            menuItem("Regional Cost", tabName = "page3_leaflet", icon = icon("area-chart")),
-            menuItem("Inpatient Procedures", tabName = "page4_word_cloud", icon = icon("map-o")),
-            menuItem("National Health Expenditure",tabName = "page5_NHE",icon=icon("database")),
-            menuItem("Data",tabName = "page6_Data",icon=icon("database"))
-        )
-    ),
+      dashboardHeader(title = "Healthcare Costs"),
+      dashboardSidebar(
+          minified = FALSE,
+          collapsed = FALSE,
+          sidebarMenu(
+              menuItem("Home", tabName = "page1_Home", icon = icon("info")),
+              menuItem("Cost by Demographics", tabName = "page2", icon = icon("area-chart")),
+              menuItem("Costs by State", tabName = "page3_leaflet", icon = icon("area-chart")),
+              menuItem("Hospital Procedures", tabName = "page4_word_cloud", icon = icon("map-o")),
+              menuItem("National Expenditure",tabName = "page5_NHE",icon=icon("database"))
+          )
+      ),
     dashboardBody(
         tabItems(
-            tabItem(tabName = "page1_Home", 
-                    fluidRow(
-                        box(
-                            title = "Introduction",
-                            solidHeader = TRUE,
-                            status = "indigo",
-                            width = 12,
-                            collapsible = TRUE,
-                            column(
-                                12,
-                                tags$div(
-                                    "The cost of healthcare is a hot topic for beneficiaries, payers, providers and other stakeholders in the 
+            tabItem(tabName = "page1_Home",
+                     fluidRow(
+                       box(
+                         title = "Introduction",
+                         # align="center",
+                         solidHeader = TRUE,
+                         status = "success",
+                         width = 12,
+                         collapsible = TRUE,
+                         collapsed = TRUE,
+                         column(
+                           12,
+                           tags$div(
+                             tags$span(
+                               p("The cost of healthcare is a hot topic for beneficiaries, payers, providers and other stakeholders in the 
                         healthcare industry. With various sectors, stakeholders, and environmental factors impacting and influencing
                         each other, and the lack of availability of service charge data, it's important to provide a resource that 
-                        may provide insight to what a beneficiary may pay for service(s).",
-                        br(),
-                        br(),
-                        "This app will provide users with the ability to view discharge amounts billed from hospitals across four 
-                        regions by demographics, as well as a map showing medical costs billed by an insurer to beneficiaries." 
-                                ),
+                        may provide insight to what a beneficiary may pay for service(s)."),
+                        p("This app will provide users with the ability to view discharge amounts billed from hospitals across four 
+                        regions by demographics, as well as a map showing the user the following", tags$b("averages")," per state:"),
+                        tags$li("Number of patients discharged"),
+                        tags$li("Submitted bill"),
+                        tags$li("Payment"),
+                        tags$li("Medicaid payment")
+                             ),
                         style = "font-size:14px"
-                            )
-                        )
-                    ),
-                    
-                    fluidRow(
-                        box(
-                            title = "Purpose and Datasets",
-                            solidHeader = TRUE,
-                            status = "olive",
-                            width = 12,
-                            collapsible = TRUE,
-                            column(
-                                12,
-                                tags$div(
-                                    "The purpose of this app is for exploratory purposes. Individuals interested in exploring medical 
-                      costs billed by insurers can find this information based on several factors including, age, gender, and BMI 
-                      and for older adults interested in Medicare billed costs based on service and region."),
+                           )
+                         )
+                       )
+                     ),
+                     fluidRow(
+                       box(
+                         title = "Why Healthcare Costs?",
+                         solidHeader = TRUE,
+                         status = "info",
+                         width = 12,
+                         collapsible = TRUE,
+                         collapsed = TRUE,
+                         column(
+                           12,
+                           tags$div(
+                             tags$span(
+                               p("The purpose of this app is for exploratory purposes. Individuals interested in exploring overall healthcare 
+                      costs can find this information based on several factors including age, gender, and BMI."),
+                      p("We wanted to explore the healthcare costs billed to beneficiaries and used data from CMS and Kaggle to 
+                      explore two different datasets."),
+                      p(tags$b("1. Medical costs personal dataset")),
+                      tags$li('This dataset comes from the book, "Machine Learning with R" by
+                        Brett Lantz. The data highlights the individual medical cost billed by an insurer for a beneficiary. It
+                        includes beneficiary information such as age, sex, BMI, smoking status, number of children, and
+                        regional location.'),
                       br(),
-                      br(),
-                      "We wanted to explore the healthcare costs billed to beneficiaries and used data from CMS and Kaggle to 
-                      explore two different datasets.",
-                      br(),
-                      br()
-                      # "1. Medical costs personal dataset - This dataset comes from the book, "Machine Learning with R" by 
-                      #   Brett Lantz. The data highlights the individual medical cost billed by an insurer for a beneficiary. It 
-                      #   includes beneficiary information such as age, sex, BMI, smoking status, number of children, and 
-                      #   regional location."),
-                            ),
-                      style = "font-size:14px"
-                        )
-                    )),
-            # tabName( = "page1_Home", 
-            #             h1("Healthcare Costs"),
-            #             column(width = 12,      
-            #                     box(
-            #                     title = ("Intro"),
-            #                     solidHeader = TRUE,
-            #                     status = "secondary",   # statuses are: primary, secondary, info, success, warning, danger, gray-dark, gray, white, indigo, lightblue, navy, purple, fuchsia, pink, maroon, orange, lime, teal, olive.
-            #                     width = NULL,
-            #                     collapsible = TRUE,
-            #                     tags$h5(tags$strong("Project Description")),
-            #                     tags$h5(
-            #                         "PARAGRAPH TEXT HERE WILL ALLOW MULTIPLE LINES."  
-            #                          
-            #                     ))),
-            #         column(width = 12,      
-            #                box(
-            #                    title = "Why HealthCare Cost?",
-            #                    solidHeader = TRUE,
-            #                    status = "secondary",   # statuses are: primary, secondary, info, success, warning, danger, gray-dark, gray, white, indigo, lightblue, navy, purple, fuchsia, pink, maroon, orange, lime, teal, olive.
-            #                    width = NULL,
-            #                    collapsible = TRUE,
-            #                    tags$h5(tags$strong("Project Description")),
-            #                    tags$h5(
-            #                        "PARAGRAPH TEXT HERE WILL ALLOW MULTIPLE LINES."  
-            #                        
-            #                    ))),
-            #         column(width = 12,      
-            #                box(
-            #                    title = "Team members",
-            #                    solidHeader = TRUE,
-            #                    status = "secondary",   # statuses are: primary, secondary, info, success, warning, danger, gray-dark, gray, white, indigo, lightblue, navy, purple, fuchsia, pink, maroon, orange, lime, teal, olive.
-            #                    width = NULL,
-            #                    collapsible = TRUE,
-            #                    tags$h5(tags$strong("Project Description")),
-            #                    tags$h5(
-            #                        "PARAGRAPH TEXT HERE WILL ALLOW MULTIPLE LINES."  
-            #                        
-            #                    )))
-            #         
-            #         
-            #             #         column(
-            #             #             12,
-            #             #             # Lets figure out rendertext instead of inserting text here
-            #             #             tags$div(
-            #             #                 h4("header")
-            #             #             ),
-            #             #             tags$body(
-            #             #                 h1('My first heading'),
-            #             #                 p('My first paragraph, with some ', strong('bold'), '
-            #             #                   dsfadf
-            #             #                   asdftext.'),
-            #             #                 div(
-            #             #                     id = 'myDiv', class = 'simpleDiv',
-            #             #                     'Here is a div with some attributes.'
-            #             #                 )
-         
+                      p(tags$b("2. Hospital charges and Medicare Payments by Geography")),
+                      tags$li("This dataset provides information on overall charges, payments, and Medicare payments for each state.")
+                             )
+                           )
+                         )
+                       )
+                     ),
+                     fluidRow(
+                       box(
+                         title = "Meet the Team",
+                         solidHeader = TRUE,
+                         status = "primary",
+                         width = 12,
+                         collapsible = TRUE,
+                         collapsed = TRUE,
+                         column(
+                           12,
+                           tags$div(
+                             tags$span(
+                               p("Haitham Al-Grain"),
+                               tags$li("Assistant Professor of Anesthesiology and Critical Care Medicine at Johns Hopkins University"),
+                               tags$li("Undergraduate from University of Maryland, College Park"),
+                               tags$li("Medical degree from George Washington University in D.C."),
+                               tags$li("Currently pursuing an MBA from Johns Hopkins University"),
+                               br(),
+                               p("Isaac Lee"),
+                               tags$li("Trader at an investment firm"),
+                               tags$li("Undergraduate from California State University, Fullerton"),
+                               tags$li("Currently pursuing a MSc of Finance at Johns Hopkins University"),
+                               br(),
+                               p("Katia Fortune"),
+                               tags$li("Currently a full time Senior Analyst for CareFirst BlueCross BlueShield."),
+                               tags$li("Part time student in the Masters of Business Administration (MBA) program at Johns Hopkins Carey Business School, with a concentration in Business Analytics and Risk Management, Healthcare Management, Innovation and Technology and Digital Marketing."),
+                               tags$li("Background in Health Policy, Healthcare Compliance and Federal Healthcare Policy."),
+                               br(),
+                               p("Phuong Nguyen"),
+                               # tags$li(""),
+                               # tags$li(""),
+                               # tags$li(""),
+                               br(),
+                               p("Rithvik Reddy")
+                               # ,
+                               # tags$li(""),
+                               # tags$li(""),
+                               # tags$li("")
+                             ),
+                             style = "font-size:14px"
+                           )
+                         )
+                       )
+                     )
+                    ),                   
             tabItem(tabName = "page2"
                     ,fluidPage(
                         box(
@@ -245,11 +226,35 @@ ui <- dashboardPage(
             # , sliderInput("year", "sliderInput", min = 2014, max = 2020, value = 1,
             #   step = 1, animate = animationOptions(interval = 2000, loop = FALSE))            
             tabItem(tabName = "page3_leaflet",
+                    fluidRow(
+                        box(align="center",
+                            title = "Details",
+                            align="center",
+                            solidHeader = FALSE,
+                            status = "orange",
+                            width = 12,
+                            collapsible = TRUE,
+                            collapsed = TRUE,
+                            column(
+                                12,
+                                tags$div(
+                                  tags$span(
+                        p("This app will provide users with the ability to view average number of discharged patients and bills submitted by hospitals, per state:"),
+                        tags$li("Number of patients discharged"),
+                        tags$li("Submitted bill"),
+                        tags$li("Payment"),
+                        tags$li("Medicaid payment")
+                                  ),
+                        style = "font-size:14px"
+                            )
+                        )
+                        )
+                    ),
                     fluidRow(column(width = 6, 
                                     selectInput(
-                                        "Color",
-                                        label = h2("Select Color"),
-                                        choices =Color
+                                        "Year",
+                                        label = h4("Select Year"),
+                                        choices =Year
                                     )) ,    
                              (column(width = 6
                                      # ,selectInput(
@@ -257,26 +262,60 @@ ui <- dashboardPage(
                                      #     label = h2("Select Color Scale"),
                                      #     choices =Color_Scale)
                                      ))),
-                    h2("2019"),
+                    # h2("2019"),
+                    # h2(paste0("20",Year_ui)),
                     br(),
-                    fluidRow(column(width = 12, leafletOutput("md_19", height = 400))),
+                    fluidRow(column(width = 12,
+                                    h2("Charges Submitted"),
+                                    align="center",
+                                    leafletOutput("md_19", height = 400))),
                     br(),
                     fluidRow(
                         column(width = 6,
-                                    h2("2018"),
+                                    h4("Number of Discharged Patients"),
+                               align="center",
                                leafletOutput("md_18", height = 300)),
                              (column(width = 6,
-                                            h2("Population Density"),
-                                leafletOutput("md_17", height = 300))))
+                                    h4("Population Density"),
+                                    align="center",
+                                leafletOutput("md_17", height = 300)))
+                    )#fluidrow
             ),
-            tabItem(tabName = "page4_word_cloud"
+            tabItem(tabName = "page4_word_cloud",
+                    # fluidRow("The Many Meanings of a Single Word",
+                    #         style="font-size:18px; background-color:#ac8f8f", align="center"),
+                    fluidRow(column(width=12,
+                                    h2("Hospital Medicare Average Payments"), ######## Q:
+                                    h5("Select Payment Range", style="font-size:11px"),
+                                    style = "text-align: center",
+                                    br(),
+                                    sliderInput("range","Average Charge", min =500, max = 1000, value = c(300, 900)),
+                                    div(verbatimTextOutput("out1"), style = "width: 300px;"),
+                                    sliderInput("max",
+                                                "Maximum Number of Charges",
+                                                min = 20,  max = 300,  value = 60)
+                    )
+                    ),#fluidrow
+                    fluidRow(column(width=12,
+                                    "Hospital Services",
+                                    br(),
+                                    plotOutput("wcoutput",height = 500,width = "100%"),
+                                    # wordcloudOutput("wcoutput", width="100%"),
+                                    br(),
+                                    br(),
+                                    br(),
+                                    a("Data Source",href="https://www.cms.gov/",target="_blank")
+                                    
+                    )
+                    )#fluidrow
             ),
-            tabItem(tabName = "page5_NHE"
-            ),
-            tabItem(tabName = "page6_data"
+            tabItem(tabName = "page5_NHE",
+                    sliderInput("year", "Year:", min = 1960, max = 2030, value = c(1960, 2030)),
+                    plotOutput("plot_NHE")
             )
-
-)))
+        )
+    )## dashboardBody
+)## dashboardPage
 
 server <- function(input, output, session) {
     
@@ -313,19 +352,14 @@ server <- function(input, output, session) {
         
     })
     
-
+  
     output$md_19 = renderLeaflet({ 
         # For the legand box SCALE(bin) & Color and DOMAIN column
-        bins <- c(0, 50, 100, 200, 400, 600, 800, 1000, Inf)
-        pal <- colorBin((paste0(input$Color)), domain = mapd$D_19, bins = bins)
-        
-        # # ORIGINAL For the legand box
-        # bins <- c(0, 10, 20, 50, 100, 200, 500, 1000, Inf)
-        # pal <- colorBin("YlOrRd", domain = states$density, bins = bins)
-        
+        bins <- c(0, 20, 40, 60, 80, 100, 125, 150, Inf)
+        pal <- colorBin("YlOrRd", domain = mapd$C_19, bins = bins)
         # Displayed Box
         labels <- sprintf("<strong>%s</strong><br/>Discharged %g<br/>Submitted $%g<br/>Paid $%g<br/>Paid CMS $%g<br/>Density %g",
-            mapd$state_19, mapd$D_19, mapd$C_19, mapd$P_19, mapd$MP_19, states$density) %>% lapply(htmltools::HTML)
+            mapd$state, mapd$D_19, mapd$C_19, mapd$P_19, mapd$MP_19, states$density) %>% lapply(htmltools::HTML)
         
         leaflet(states) %>%
             setView(-96, 37.8, 4) %>%
@@ -356,11 +390,11 @@ server <- function(input, output, session) {
     
     output$md_18 = renderLeaflet({ 
         # For the legand box SCALE(bin) & Color and DOMAIN column
-        bins <- c(0, 30000, 50000, 75000, 100000, 125000, 150000, 200000, Inf)
-        pal <- colorBin((paste0(input$Color)), domain = mapd$C_18, bins = bins)
+        bins <- c(0, 25, 50, 100, 150, 250, 500, 1000, Inf)
+        pal <- colorBin("YlOrRd", domain = mapd$D_19, bins = bins)
         # Displayed Box
         labels <- sprintf("<strong>%s</strong><br/>Discharged %g<br/>Submitted $%g<br/>Paid $%g<br/>Paid CMS $%g<br/>Density %g",
-            mapd$state_18, mapd$D_18, mapd$C_18, mapd$P_18, mapd$MP_18, states$density) %>% 
+            mapd$state, mapd$D_19, mapd$C_19, mapd$P_19, mapd$MP_19, states$density) %>% 
             lapply(htmltools::HTML)
         
         leaflet(states) %>%
@@ -369,7 +403,7 @@ server <- function(input, output, session) {
                 id = "mapbox.light",
                 accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN'))) %>%
             addPolygons(
-                fillColor = ~pal(mapd$C_18),
+                fillColor = ~pal(mapd$D_19),
                 weight = 2,
                 opacity = 1,
                 color = "white",
@@ -391,11 +425,11 @@ server <- function(input, output, session) {
     output$md_17 = renderLeaflet({ 
         # # ORIGINAL For the legand box
         bins <- c(0, 10, 20, 50, 100, 200, 500, 1000, Inf)
-        pal <- colorBin((paste0(input$Color)), domain = states$density, bins = bins)
+        pal <- colorBin("YlOrRd", domain = states$density, bins = bins)
         
         # Displayed Box
         labels <- sprintf("<strong>%s</strong><br/>Discharged %g<br/>Submitted $%g<br/>Paid $%g<br/>Paid CMS $%g<br/>Density %g",
-            mapd$state_17, mapd$D_17, mapd$C_17, mapd$P_17, mapd$MP_17, states$density) %>% 
+            mapd$state, mapd$D_19, mapd$C_19, mapd$P_19, mapd$MP_19, states$density) %>% 
             lapply(htmltools::HTML)
         
         leaflet(states) %>%
@@ -422,44 +456,57 @@ server <- function(input, output, session) {
                     textsize = "15px",
                     direction = "auto")) 
     })
-    
-    
-    #  ######################### word cloud        
+
 
     
-    # ###### Word Cloud
-    # wcdata <- read_csv("Inpatient services &amp; mdcr pmt 17 to 19.csv")
-    # ### Create a vector containing only the text
-    # wc17 <- wcdata$`Pr _17`
-    # wc18 <- wcdata$`Pr _18`
-    # wc19 <- wcdata$`Pr _19`
-    # ### Create a corpus  
-    # docs <- Corpus(VectorSource(wc17))
-    # 
-    # wcdata$`Pr _17`=tolower(wcdata$`Pr _17`)
-    # query17=wcdata%>%
-    #   group_by(wcdata$`Pr _17`)%>%
-    #   summarise(N=n())
-    # 
-    # output$plot4 <- renderPlot({
-    #   cal=switch(input$method,
-    #              square=(query17$N)^2,
-    #              sqrt=sqrt(query17$N),
-    #              none=query17$N
-    #   )
-    #   frequency=round(cal,0)
-    #   set.seed(10)
-    #   wordcloud(words = query$query, 
-    #             freq = frequency,
-    #             min.freq = 10,
-    #             max.words=input$max,
-    #             colors=brewer.pal(8, input$color),
-    #             scale = c(3,0.5),
-    #             random.order=F)
-    # }) 
     
+    ############### WORD CLOUD
+    #input$range[1]
+    output$wcoutput <- renderPlot ({
+      wc <-   read_csv("wc19.csv")
+      # group_by(word=word)%>%
+      # summarise(freq=sum(freq))
+      
+      d <-   as.data.frame (wc,stringsAsFactors = FALSE) 
+      frequency <- d$freq
+      frequency=round(sqrt(d$freq),0) 
+      frequency=sort(d$freq,decreasing = TRUE)
+      
+      set.seed(10)
+      wordcloud(words = d$word, 
+                freq = frequency,
+                scale=c(3,.5), #######Q: scale min max frequencey
+                min.freq = input$range[1],
+                # max.freq =1100,#input$range[2],
+                max.words = input$max,
+                colors=brewer.pal(8, "Dark2"),
+                random.order=FALSE)  
+    }) 
+    
+    
+    output$plot_NHE = renderPlot({
+      
+      nhe_ggp <- data.frame(x = nhe$Year,                            # Reshape data frame
+                            y = c(nhe$Total, nhe$Insurance, nhe$Medicare, nhe$Medicaid),
+                            Group = c(rep("Total", nrow(nhe)),
+                                      rep("Insurance", nrow(nhe)),
+                                      rep("Medicare", nrow(nhe)),
+                                      rep("Medicaid", nrow(nhe))))
+      
+      return(
+        ggplot(nhe_ggp, aes(x, y, col = Group)) +          
+          geom_line(size = 1) +
+          xlim(input$year[1],input$year[2])+
+          labs(
+            subtitle = "National Health Expenditure 1960 to 2030 (in millions)",
+            x = "Year",
+            y = "Expenditure") +
+          theme_classic())
+      
+    })
     
 }
 
 shinyApp(ui = ui, server = server)
+
 
